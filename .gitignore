@@ -1,0 +1,85 @@
+# ---- Python ----
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*$py.class
+.python-version
+
+# ---- Virtuelle Umgebungen ----
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+pythonenv*/
+
+# ---- Build & Distribution ----
+build/
+dist/
+develop-eggs/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+*.egg
+.installed.cfg
+*.manifest
+
+# ---- Test- & Analyse-Caches ----
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pytype/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+
+# ---- IDE & Editoren ----
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.tern-project
+
+# ---- Betriebssystem ----
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Thumbs.db:encryptable
+Desktop.ini
+
+# ---- Logs & temporäre Dateien ----
+*.log
+*.tmp
+*.temp
+*.bak
+logs/
+tmp/
+
+# ---- Secrets & lokale Konfiguration ----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+config.local.*
+secrets.*
+credentials.*
