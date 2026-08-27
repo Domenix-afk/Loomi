@@ -15,8 +15,27 @@ das beste Outfit – bewertet mit einem transparenten, regelbasierten Score.
 pip install -e .
 python -m loomi.demo       # Beispiel-Szenarien anzeigen
 python -m loomi.demo -i    # eigenes Wetter & Kontext interaktiv eingeben
+python -m loomi.main       # Hauptprogramm: eigener Kleiderschrank (SQLite)
 python -m pytest           # Tests ausführen
 ```
+
+### Hauptprogramm (`loomi.main`)
+
+`python -m loomi.main` startet mit einem Menü und fragt, was du tun möchtest:
+
+1. **Kleiderschrank (Wardrobe)** – Kleidung verwalten:
+   - **Hinzufügen**: alle wichtigen Fragen (Name, Kategorie, Farbe, Stil,
+     Wärme, Formalität) – das Teil wird in der kleinen **SQLite-Datenbank**
+     (`loomi.db`, änderbar mit `--db`) gespeichert
+   - **Löschen**: Kleidungsstück per Nummer oder Name auswählen und entfernen
+   - **Beispieldaten laden**: die 32 Beispiel-Kleidungsstücke in die Datenbank
+     übernehmen (idempotent)
+   - **Beispieldaten entfernen**: per Befehl wieder aus der Datenbank löschen
+2. **Loomi** – Outfit-Empfehlung: Wetter eingeben → Empfehlung + Feedback
+   (identisch zur Demo, ohne Kleidungsverwaltung)
+
+Ist die Datenbank leer, kannst du beim Empfehlen den Beispiel-Kleiderschrank
+laden. Nach jeder Runde kehrst du zum Start-Menü zurück.
 
 Im interaktiven Modus (`-i`) fragt Loomi nur das aktuelle Wetter ab:
 Temperatur (auch mit deutschem Komma, z. B. `24,5`) und Wetterlage –
@@ -39,7 +58,9 @@ Die Module sind strikt getrennt und hängen nur über die Datenmodelle in
 | `loomi/generator.py` | `OutfitGenerator` – bildet alle gültigen Kombinationen (Pflicht- + optionale Slots) |
 | `loomi/scoring/` | Scoring-System – eine austauschbare Komponente pro Bewertungsdimension |
 | `loomi/recommender.py` | `Recommender` – gewichtet die Teil-Scores und empfiehlt das Beste |
-| `loomi/demo.py` | CLI-Demo |
+| `loomi/storage.py` | `WardrobeStore` – einfache SQLite-Persistenz für den Kleiderschrank |
+| `loomi/demo.py` | CLI-Demo (Beispiel-Szenarien + interaktive Wetter-Eingabe) |
+| `loomi/main.py` | Hauptprogramm: eigener Kleiderschrank, Empfehlung, Feedback, Löschen |
 
 ## Nutzung
 
@@ -100,11 +121,13 @@ konfigurierbar (`Recommender(weights={...}, components=[...])`).
 
 ```
 loomi/
-├── models.py          # Datenmodelle (Enums, ClothingItem, Outfit, Scores)
+├── models.py          # Datenmodelle (Enums, ClothingItem, Outfit, Scores, Feedback)
 ├── wardrobe.py        # Wardrobe + Beispiel-Kleiderschrank
 ├── generator.py       # OutfitGenerator
 ├── scoring/           # StyleMatch, ColorHarmony, OccasionFit, WeatherFit, Variety
 ├── recommender.py     # Recommender (gewichteter Gesamt-Score)
-└── demo.py            # CLI-Demo
+├── storage.py         # WardrobeStore (SQLite-Persistenz)
+├── demo.py            # CLI-Demo (Szenarien + interaktive Wetter-Eingabe)
+└── main.py            # Hauptprogramm (eigener Kleiderschrank, Feedback, Löschen)
 tests/                 # pytest-Tests für alle Module
 ```

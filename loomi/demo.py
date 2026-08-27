@@ -134,6 +134,13 @@ def run_interactive(
     while True:
         context = ask_context(ask)
         scored = recommender.recommend(wardrobe, context, top_k=3)
+        if not scored:
+            print("\n  Keine Outfits möglich – im Kleiderschrank fehlen z. B. Top oder Bottom.")
+            again = ask("\nNoch eine Empfehlung? (j/N): ").strip().lower()
+            if again not in ("j", "ja", "y", "yes"):
+                print("Bis bald!")
+                return
+            continue
         print_results("Deine Empfehlung", context, scored)
         feedback = ask_feedback(ask, scored[0], context)
         if feedback is not None:

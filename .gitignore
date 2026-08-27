@@ -72,6 +72,11 @@ Desktop.ini
 logs/
 tmp/
 
+# ---- Lokale Datenbanken (Nutzerdaten) ----
+*.db
+*.sqlite
+*.sqlite3
+
 # ---- Secrets & lokale Konfiguration ----
 .env
 .env.*
