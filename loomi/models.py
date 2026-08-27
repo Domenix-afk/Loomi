@@ -125,3 +125,17 @@ class ScoredOutfit:
     outfit: Outfit
     total: float  # gewichtete Summe der Teil-Scores, 0..1
     components: list[ComponentScore]
+
+
+@dataclass
+class OutfitFeedback:
+    """Explizites Nutzer-Feedback zu einem empfohlenen Outfit (1–5).
+
+    Bewusst schlank gehalten – später z. B. um Zeitstempel, Kommentar
+    oder persönliche Vorlieben erweiterbar, um daraus zu lernen, welche
+    Outfits ein Nutzer mag.
+    """
+
+    outfit: Outfit
+    rating: int  # 1..5
+    context: OutfitContext | None = None

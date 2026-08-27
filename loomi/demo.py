@@ -16,6 +16,8 @@ from .models import (
     Occasion,
     Outfit,
     OutfitContext,
+    OutfitFeedback,
+    ScoredOutfit,
     Style,
     WeatherCondition,
 )
@@ -102,16 +104,40 @@ def ask_context(
     return OutfitContext(temperature, condition, occasion, None)
 
 
+def ask_feedback(
+    ask: Callable[[str], str],
+    scored: ScoredOutfit,
+    context: OutfitContext | None = None,
+) -> OutfitFeedback | None:
+    """Fragt nach einer Bewertung (1–5) für das beste Outfit.
+
+    Enter = kein Feedback (liefert `None`). `ask` ist injizierbar,
+    damit die Logik testbar bleibt.
+    """
+    while True:
+        raw = ask("\nWie gefällt dir das beste Outfit? (1–5, Enter = überspringen): ").strip()
+        if not raw:
+            return None
+        if raw.isdigit():
+            rating = int(raw)
+            if 1 <= rating <= 5:
+                return OutfitFeedback(outfit=scored.outfit, rating=rating, context=context)
+        print("  Bitte eine Zahl von 1 bis 5 eingeben (Enter = überspringen).")
+
+
 def run_interactive(
     recommender: Recommender,
     wardrobe: Wardrobe,
     ask: Callable[[str], str] = input,
 ) -> None:
-    """Interaktive Schleife: Wetter eingeben, Empfehlung bekommen."""
+    """Interaktive Schleife: Wetter eingeben, Empfehlung bekommen, Feedback geben."""
     while True:
         context = ask_context(ask)
         scored = recommender.recommend(wardrobe, context, top_k=3)
         print_results("Deine Empfehlung", context, scored)
+        feedback = ask_feedback(ask, scored[0], context)
+        if feedback is not None:
+            print(f"  Danke! Dein Feedback ({feedback.rating}/5) wurde erfasst.")
         again = ask("\nNoch eine Empfehlung? (j/N): ").strip().lower()
         if again not in ("j", "ja", "y", "yes"):
             print("Bis bald!")

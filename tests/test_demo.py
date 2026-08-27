@@ -1,7 +1,7 @@
 import pytest
 
-from loomi.demo import ask_context
-from loomi.models import Occasion, WeatherCondition
+from loomi.demo import ask_context, ask_feedback
+from loomi.models import Occasion, Outfit, OutfitContext, ScoredOutfit, WeatherCondition
 
 
 class FakeInput:
@@ -56,3 +56,35 @@ def test_ask_context_accepts_custom_occasion():
     fake = FakeInput(["8", "2"])
     ctx = ask_context(fake, occasion=Occasion.WORK)
     assert ctx.occasion is Occasion.WORK
+
+
+def make_scored() -> ScoredOutfit:
+    return ScoredOutfit(outfit=Outfit(), total=0.9, components=[])
+
+
+def test_ask_feedback_accepts_rating():
+    fake = FakeInput(["4"])
+    feedback = ask_feedback(fake, make_scored())
+    assert feedback is not None
+    assert feedback.rating == 4
+    assert feedback.outfit == Outfit()
+
+
+def test_ask_feedback_retries_invalid_rating():
+    fake = FakeInput(["abc", "0", "6", "3"])
+    feedback = ask_feedback(fake, make_scored())
+    assert feedback is not None
+    assert feedback.rating == 3
+
+
+def test_ask_feedback_skip_on_enter():
+    fake = FakeInput([""])
+    assert ask_feedback(fake, make_scored()) is None
+
+
+def test_ask_feedback_stores_context():
+    fake = FakeInput(["5"])
+    context = OutfitContext(12.0, WeatherCondition.RAIN, Occasion.CASUAL)
+    feedback = ask_feedback(fake, make_scored(), context)
+    assert feedback is not None
+    assert feedback.context is context

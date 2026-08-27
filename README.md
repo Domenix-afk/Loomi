@@ -22,7 +22,10 @@ Im interaktiven Modus (`-i`) fragt Loomi nur das aktuelle Wetter ab:
 Temperatur (auch mit deutschem Komma, z. B. `24,5`) und Wetterlage –
 per Index (z. B. `2`), Wert (z. B. `rain`) oder Enter für den Vorschlag.
 Anlass und Wunsch-Style sind dabei auf sensible Standardwerte gesetzt
-(casual / keiner).
+(casual / keiner). Nach der Empfehlung kannst du das beste Outfit mit
+1–5 bewerten (Enter = überspringen) – das Feedback wird als
+`OutfitFeedback` erfasst und ist die Grundlage für spätere
+Personalisierung.
 
 ## Architektur
 
