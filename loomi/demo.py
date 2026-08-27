@@ -1,13 +1,26 @@
 """Kommandozeilen-Demo für Loomis Outfit-Recommendation.
 
-Ausführen mit:  python -m loomi.demo
+Ausführen mit:
+    python -m loomi.demo          # Beispiel-Szenarien
+    python -m loomi.demo -i       # eigenes Wetter & Kontext interaktiv eingeben
 """
 
 from __future__ import annotations
 
-from .models import Category, Occasion, Outfit, OutfitContext, Style, WeatherCondition
+import argparse
+import sys
+from collections.abc import Callable
+
+from .models import (
+    Category,
+    Occasion,
+    Outfit,
+    OutfitContext,
+    Style,
+    WeatherCondition,
+)
 from .recommender import Recommender
-from .wardrobe import sample_wardrobe
+from .wardrobe import Wardrobe, sample_wardrobe
 
 _SLOT_ORDER = (
     Category.TOP,
@@ -40,13 +53,86 @@ def print_results(title: str, ctx: OutfitContext, scored: list, top: int = 3) ->
             print(f"        {comp.component:<9} {comp.score:.3f}  (Gewicht {comp.weight:.2f})  {comp.details}")
 
 
-def main() -> None:
-    import sys
+def _ask_temperature(ask: Callable[[str], str]) -> float:
+    while True:
+        raw = ask("Aktuelle Temperatur in °C [20]: ").strip().replace(",", ".")
+        if not raw:
+            return 20.0
+        try:
+            value = float(raw)
+        except ValueError:
+            print(f"  Ungültige Temperatur '{raw}' – bitte eine Zahl eingeben.")
+            continue
+        if -40 <= value <= 50:
+            return value
+        print("  Bitte einen Wert zwischen -40 und 50 °C angeben.")
 
+
+def _ask_condition(ask: Callable[[str], str]) -> WeatherCondition:
+    choices = ", ".join(
+        f"{i}={option.value}" for i, option in enumerate(WeatherCondition, 1)
+    )
+    while True:
+        raw = ask(f"Wetterlage [sunny] ({choices}): ").strip().lower()
+        if not raw:
+            return WeatherCondition.SUNNY
+        if raw.isdigit():
+            index = int(raw)
+            if 1 <= index <= len(WeatherCondition):
+                return list(WeatherCondition)[index - 1]
+        for option in WeatherCondition:
+            if raw == option.value:
+                return option
+        print(f"  Ungültige Eingabe '{raw}' – bitte Index oder Wert angeben.")
+
+
+def ask_context(
+    ask: Callable[[str], str] = input,
+    occasion: Occasion = Occasion.CASUAL,
+) -> OutfitContext:
+    """Fragt interaktiv nur das aktuelle Wetter ab (Temperatur + Wetterlage).
+
+    Anlass und Wunsch-Style werden nicht abgefragt, sondern auf sensible
+    Defaults gesetzt (Standard: casual / keiner) – per Parameter änderbar.
+    `ask` ist injizierbar, damit die Eingabe-Logik testbar bleibt.
+    """
+    print("\n=== Wetter-Eingabe (Enter = Vorschlag) ===")
+    temperature = _ask_temperature(ask)
+    condition = _ask_condition(ask)
+    return OutfitContext(temperature, condition, occasion, None)
+
+
+def run_interactive(
+    recommender: Recommender,
+    wardrobe: Wardrobe,
+    ask: Callable[[str], str] = input,
+) -> None:
+    """Interaktive Schleife: Wetter eingeben, Empfehlung bekommen."""
+    while True:
+        context = ask_context(ask)
+        scored = recommender.recommend(wardrobe, context, top_k=3)
+        print_results("Deine Empfehlung", context, scored)
+        again = ask("\nNoch eine Empfehlung? (j/N): ").strip().lower()
+        if again not in ("j", "ja", "y", "yes"):
+            print("Bis bald!")
+            return
+
+
+def main() -> None:
     try:
         sys.stdout.reconfigure(encoding="utf-8")
     except (AttributeError, ValueError):
         pass  # Konsole ohne reconfigure-Unterstützung
+
+    parser = argparse.ArgumentParser(
+        description="Loomi – Outfit-Empfehlung (Personal-Style-Engine)"
+    )
+    parser.add_argument(
+        "-i", "--interactive",
+        action="store_true",
+        help="Wetter und Kontext interaktiv eingeben statt der Beispiel-Szenarien",
+    )
+    args = parser.parse_args()
 
     wardrobe = sample_wardrobe()
     recommender = Recommender()
@@ -54,6 +140,10 @@ def main() -> None:
     count = f"{recommender.generator.outfit_count(wardrobe):,}".replace(",", ".")
     print(f"Kleiderschrank: {len(wardrobe)} Kleidungsstücke, "
           f"{count} mögliche Outfits")
+
+    if args.interactive:
+        run_interactive(recommender, wardrobe)
+        return
 
     scenarios = [
         ("Sommerlicher Stadtbummel",

@@ -13,9 +13,16 @@ das beste Outfit – bewertet mit einem transparenten, regelbasierten Score.
 
 ```bash
 pip install -e .
-python -m loomi.demo      # Demo mit Beispiel-Kleiderschrank
-python -m pytest          # Tests ausführen
+python -m loomi.demo       # Beispiel-Szenarien anzeigen
+python -m loomi.demo -i    # eigenes Wetter & Kontext interaktiv eingeben
+python -m pytest           # Tests ausführen
 ```
+
+Im interaktiven Modus (`-i`) fragt Loomi nur das aktuelle Wetter ab:
+Temperatur (auch mit deutschem Komma, z. B. `24,5`) und Wetterlage –
+per Index (z. B. `2`), Wert (z. B. `rain`) oder Enter für den Vorschlag.
+Anlass und Wunsch-Style sind dabei auf sensible Standardwerte gesetzt
+(casual / keiner).
 
 ## Architektur
 
