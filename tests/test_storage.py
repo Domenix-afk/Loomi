@@ -1,7 +1,8 @@
 import pytest
 
-from loomi.models import Category, ClothingItem, ColorFamily, Style
-from loomi.storage import WardrobeStore
+from loomi.models import Category, ClothingItem, ColorFamily, Outfit, OutfitFeedback, Style
+from loomi.preferences import PreferenceProfile
+from loomi.storage import PreferenceStore, WardrobeStore
 
 
 def make_item(item_id="t1"):
@@ -58,3 +59,65 @@ def test_empty_db_loads_empty_wardrobe(tmp_path):
     store = WardrobeStore(str(tmp_path / "loomi.db"))
     assert len(store.load()) == 0
     assert store.count() == 0
+
+
+# --- PreferenceStore ---
+
+
+def make_outfit():
+    top = ClothingItem("t1", "Blauer Pullover", Category.TOP, ColorFamily.BLUE, Style.CASUAL, 4, 2)
+    bottom = ClothingItem("b1", "Jeans", Category.BOTTOM, ColorFamily.BLUE, Style.CASUAL, 2, 1)
+    return Outfit({Category.TOP: top, Category.BOTTOM: bottom})
+
+
+def make_profile():
+    profile = PreferenceProfile()
+    profile.update(OutfitFeedback(outfit=make_outfit(), rating=5))
+    profile.update(OutfitFeedback(outfit=make_outfit(), rating=2))
+    return profile
+
+
+def test_preference_store_save_load_roundtrip(tmp_path):
+    store = PreferenceStore(str(tmp_path / "loomi.db"))
+    store.save(make_profile())
+
+    loaded = store.load()
+    assert loaded is not None
+    assert loaded.feedback_count == 2
+    assert loaded.to_dict() == make_profile().to_dict()
+    assert loaded.score_outfit(make_outfit()) == make_profile().score_outfit(make_outfit())
+
+
+def test_preference_store_empty_returns_none(tmp_path):
+    store = PreferenceStore(str(tmp_path / "loomi.db"))
+    assert store.load() is None
+
+
+def test_preference_store_persists_across_instances(tmp_path):
+    path = str(tmp_path / "loomi.db")
+    PreferenceStore(path).save(make_profile())
+
+    loaded = PreferenceStore(path).load()
+    assert loaded is not None
+    assert loaded.feedback_count == 2
+
+
+def test_preference_store_delete_removes_profile(tmp_path):
+    store = PreferenceStore(str(tmp_path / "loomi.db"))
+    store.save(make_profile())
+    assert store.load() is not None
+
+    store.delete()
+    assert store.load() is None
+
+
+def test_preference_store_overwrites_previous_profile(tmp_path):
+    store = PreferenceStore(str(tmp_path / "loomi.db"))
+    store.save(make_profile())
+    fresh = PreferenceProfile()
+    store.save(fresh)
+
+    loaded = store.load()
+    assert loaded is not None
+    assert loaded.feedback_count == 0
+    assert loaded.to_dict() == fresh.to_dict()

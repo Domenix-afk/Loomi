@@ -19,10 +19,12 @@ from .models import (
     Style,
     WeatherCondition,
 )
+from .preferences import PreferenceProfile
 from .recommender import Recommender
 from .scoring.base import ScoreComponent
 from .scoring.color import ColorHarmony
 from .scoring.occasion import OccasionFit
+from .scoring.preference import PersonalPreference
 from .scoring.style import StyleMatch
 from .scoring.variety import Variety
 from .scoring.weather import WeatherFit
@@ -43,11 +45,13 @@ __all__ = [
     "OutfitGenerator",
     "Wardrobe",
     "sample_wardrobe",
+    "PreferenceProfile",
     "ScoreComponent",
     "StyleMatch",
     "ColorHarmony",
     "OccasionFit",
     "WeatherFit",
     "Variety",
+    "PersonalPreference",
     "Recommender",
 ]

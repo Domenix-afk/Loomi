@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from .generator import OutfitGenerator
 from .models import Outfit, OutfitContext, ScoredOutfit
+from .preferences import PreferenceProfile
 from .scoring.base import ScoreComponent
 from .scoring.color import ColorHarmony
 from .scoring.occasion import OccasionFit
+from .scoring.preference import PersonalPreference
 from .scoring.style import StyleMatch
 from .scoring.variety import Variety
 from .scoring.weather import WeatherFit
@@ -37,17 +39,30 @@ class Recommender:
         "variety": 0.10,
     }
 
+    # Gewicht der Präferenz-Komponente, sobald ein PreferenceProfile aktiv ist.
+    PREFERENCE_WEIGHT: float = 0.15
+
     def __init__(
         self,
         components: list[ScoreComponent] | None = None,
         weights: dict[str, float] | None = None,
         generator: OutfitGenerator | None = None,
+        preference_profile: PreferenceProfile | None = None,
     ) -> None:
         self.components = (
             components if components is not None else [c() for c in self.DEFAULT_COMPONENTS]
         )
         self.weights = dict(weights) if weights is not None else dict(self.DEFAULT_WEIGHTS)
         self.generator = generator or OutfitGenerator()
+        self.preference_profile = preference_profile
+        if preference_profile is not None:
+            # Präferenz-Komponente ergänzen (falls nicht schon vorhanden) und
+            # mit Standard-Gewicht versehen, wenn keine eigenen Gewichte kamen.
+            self.components = list(self.components)
+            if not any(isinstance(c, PersonalPreference) for c in self.components):
+                self.components.append(PersonalPreference(preference_profile))
+            if weights is None:
+                self.weights.setdefault("preference", self.PREFERENCE_WEIGHT)
 
     def score_outfit(
         self,

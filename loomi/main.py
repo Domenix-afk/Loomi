@@ -18,8 +18,9 @@ from collections.abc import Callable
 
 from .demo import run_interactive
 from .models import Category, ClothingItem, ColorFamily, Style
+from .preferences import PreferenceProfile
 from .recommender import Recommender
-from .storage import WardrobeStore
+from .storage import PreferenceStore, WardrobeStore
 from .wardrobe import sample_wardrobe
 
 
@@ -164,9 +165,15 @@ def wardrobe_menu(
 
 def loomi_session(
     store: WardrobeStore,
+    pref_store: PreferenceStore | None = None,
     ask: Callable[[str], str] = input,
 ) -> None:
-    """Loomi-Modus: Wetter eingeben, Outfits empfohlen bekommen, Feedback geben."""
+    """Loomi-Modus: Wetter eingeben, Outfits empfohlen bekommen, Feedback geben.
+
+    Mit `pref_store` werden gelernte Vorlieben aus früheren Sitzungen
+    geladen und nach der Sitzung wieder gespeichert (überlebt Neustarts).
+    Ohne `pref_store` bleibt das Profil auf die Sitzung beschränkt.
+    """
     wardrobe = store.load()
     if not wardrobe.items:
         raw = ask("\nDer Kleiderschrank ist leer. Beispieldaten laden? (j/N): ").strip().lower()
@@ -177,10 +184,16 @@ def loomi_session(
             print("Ohne Kleidung gibt es nichts zu empfehlen.")
             return
 
-    recommender = Recommender()
+    # Gelernte Vorlieben aus früheren Sitzungen laden (falls vorhanden).
+    profile = pref_store.load() if pref_store is not None else None
+    if profile is None:
+        profile = PreferenceProfile()
+    recommender = Recommender(preference_profile=profile)
     count = f"{recommender.generator.outfit_count(wardrobe):,}".replace(",", ".")
     print(f"\nKleiderschrank: {len(wardrobe)} Kleidungsstücke, {count} mögliche Outfits")
-    run_interactive(recommender, wardrobe, ask=ask)
+    run_interactive(recommender, wardrobe, ask=ask, profile=profile)
+    if pref_store is not None:
+        pref_store.save(profile)
 
 
 def main() -> None:
@@ -222,7 +235,7 @@ def main() -> None:
         if raw in ("1", "kleiderschrank", "wardrobe"):
             wardrobe_menu(store)
         elif raw in ("2", "loomi", "generator"):
-            loomi_session(store)
+            loomi_session(store, PreferenceStore(args.db))
         else:
             print("  Ungültige Eingabe – bitte 1, 2 oder Enter wählen.")
 

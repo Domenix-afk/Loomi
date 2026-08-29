@@ -1,8 +1,8 @@
 import pytest
 
 from loomi.main import ask_new_item, loomi_session, wardrobe_menu
-from loomi.models import Category, ClothingItem, ColorFamily, Style
-from loomi.storage import WardrobeStore
+from loomi.models import Category, ClothingItem, ColorFamily, Outfit, Style
+from loomi.storage import PreferenceStore, WardrobeStore
 
 
 class FakeInput:
@@ -161,3 +161,30 @@ def test_loomi_session_uses_stored_items(tmp_path):
     store.save(make_item("b1", "Hose", category=Category.BOTTOM))
     # Wetter 20 °C sunny (Defaults), Feedback überspringen, keine weitere Empfehlung
     loomi_session(store, ask=FakeInput(["", "", "", "n"]))
+
+
+def test_loomi_session_persists_profile_across_sessions(tmp_path):
+    db = str(tmp_path / "loomi.db")
+    store = WardrobeStore(db)
+    store.save(make_item("t1", "T-Shirt"))
+    store.save(make_item("b1", "Hose", category=Category.BOTTOM))
+    pref_store = PreferenceStore(db)
+
+    # Sitzung 1: Wetter-Defaults, Feedback 5/5 auf das einzige Outfit
+    loomi_session(store, pref_store, ask=FakeInput(["", "", "5", "n"]))
+
+    loaded = PreferenceStore(db).load()
+    assert loaded is not None
+    assert loaded.feedback_count == 1
+
+    # Die gelernte Präferenz ist wirksam (Score über neutral)
+    wardrobe = store.load()
+    outfit = Outfit({
+        Category.TOP: wardrobe.get("t1"),
+        Category.BOTTOM: wardrobe.get("b1"),
+    })
+    assert loaded.score_outfit(outfit) > 0.5
+
+    # Sitzung 2 (ohne Feedback) überschreibt das Profil nicht mit leerem Zustand
+    loomi_session(store, pref_store, ask=FakeInput(["", "", "", "n"]))
+    assert PreferenceStore(db).load().feedback_count == 1

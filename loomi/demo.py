@@ -21,6 +21,7 @@ from .models import (
     Style,
     WeatherCondition,
 )
+from .preferences import PreferenceProfile
 from .recommender import Recommender
 from .wardrobe import Wardrobe, sample_wardrobe
 
@@ -129,8 +130,14 @@ def run_interactive(
     recommender: Recommender,
     wardrobe: Wardrobe,
     ask: Callable[[str], str] = input,
+    profile: PreferenceProfile | None = None,
 ) -> None:
-    """Interaktive Schleife: Wetter eingeben, Empfehlung bekommen, Feedback geben."""
+    """Interaktive Schleife: Wetter eingeben, Empfehlung bekommen, Feedback geben.
+
+    Der Ablauf (Fragen, Ausgaben) ist bewusst unverändert – lediglich das
+    erfasste Feedback wird zusätzlich in das `PreferenceProfile` eingespeist,
+    damit spätere Empfehlungen persönlicher werden.
+    """
     while True:
         context = ask_context(ask)
         scored = recommender.recommend(wardrobe, context, top_k=3)
@@ -145,6 +152,8 @@ def run_interactive(
         feedback = ask_feedback(ask, scored[0], context)
         if feedback is not None:
             print(f"  Danke! Dein Feedback ({feedback.rating}/5) wurde erfasst.")
+            if profile is not None:
+                profile.update(feedback)
         again = ask("\nNoch eine Empfehlung? (j/N): ").strip().lower()
         if again not in ("j", "ja", "y", "yes"):
             print("Bis bald!")
@@ -168,14 +177,15 @@ def main() -> None:
     args = parser.parse_args()
 
     wardrobe = sample_wardrobe()
-    recommender = Recommender()
+    profile = PreferenceProfile()
+    recommender = Recommender(preference_profile=profile)
 
     count = f"{recommender.generator.outfit_count(wardrobe):,}".replace(",", ".")
     print(f"Kleiderschrank: {len(wardrobe)} Kleidungsstücke, "
           f"{count} mögliche Outfits")
 
     if args.interactive:
-        run_interactive(recommender, wardrobe)
+        run_interactive(recommender, wardrobe, profile=profile)
         return
 
     scenarios = [
