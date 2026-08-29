@@ -16,7 +16,33 @@ pip install -e .
 python -m loomi.demo       # Beispiel-Szenarien anzeigen
 python -m loomi.demo -i    # eigenes Wetter & Kontext interaktiv eingeben
 python -m loomi.main       # Hauptprogramm: eigener Kleiderschrank (SQLite)
+python -m webapp.server    # Web-App im Browser (http://127.0.0.1:8000)
 python -m pytest           # Tests ausführen
+```
+
+### Web-App (`webapp/`)
+
+`python -m webapp.server` startet eine schlanke Web-UI **auf Basis des
+existierenden Loomi-Kerns** – ohne neue Features und ohne den Kern zu
+verändern. Ein stdlib-HTTP-Server (keine weiteren Abhängigkeiten) bedient
+eine JSON-API, über die das Frontend (HTML/CSS/JS, kein Build-Schritt)
+mit den vorhandenen Loomi-Funktionen arbeitet:
+
+- **Empfehlung**: Wetter (Temperatur + Wetterlage), Anlass und optionaler
+  Wunsch-Style → Top-3-Outfits mit transparentem Score und Komponenten-
+  Aufschlüsselung. Jede Karte lässt sich mit 1–5 Sternen bewerten.
+- **Kleiderschrank**: Kleidungsstücke anlegen/löschen, Beispieldaten laden
+  und entfernen – alles direkt in der SQLite-Datenbank.
+- **Profil**: zeigt die gelernten Vorlieben (aus dem `PreferenceProfile`)
+  und kann das Profil zurücksetzen.
+
+Alle Buttons und Flows sind mit echten API-Endpunkten verdrahtet – es gibt
+keine Platzhalter. Optionen:
+
+```bash
+python -m webapp.server --port 8080   # anderer Port
+python -m webapp.server --db pfad.db  # andere Datenbank
+python -m webapp.server --open        # Browser automatisch öffnen
 ```
 
 ### Hauptprogramm (`loomi.main`)
@@ -62,6 +88,7 @@ Die Module sind strikt getrennt und hängen nur über die Datenmodelle in
 | `loomi/storage.py` | `WardrobeStore` + `PreferenceStore` – einfache SQLite-Persistenz für Kleiderschrank und Präferenzprofil |
 | `loomi/demo.py` | CLI-Demo (Beispiel-Szenarien + interaktive Wetter-Eingabe) |
 | `loomi/main.py` | Hauptprogramm: eigener Kleiderschrank, Empfehlung, Feedback, Löschen |
+| `webapp/` | Web-UI über dem Kern: `app.py` (API-Schicht), `server.py` (HTTP), `static/` (Frontend) |
 
 ## Nutzung
 
@@ -183,7 +210,7 @@ später können weitere Attribute (Material, Muster) oder mehrere Nutzer
 ## Projektstruktur
 
 ```
-loomi/
+loomi/                 # bestehender Python-Kern (unverändert)
 ├── models.py          # Datenmodelle (Enums, ClothingItem, Outfit, Scores, Feedback)
 ├── wardrobe.py        # Wardrobe + Beispiel-Kleiderschrank
 ├── generator.py       # OutfitGenerator
@@ -193,5 +220,9 @@ loomi/
 ├── storage.py         # WardrobeStore + PreferenceStore (SQLite-Persistenz)
 ├── demo.py            # CLI-Demo (Szenarien + interaktive Wetter-Eingabe)
 └── main.py            # Hauptprogramm (eigener Kleiderschrank, Feedback, Löschen)
-tests/                 # pytest-Tests für alle Module
+webapp/                # Web-App über dem Kern (isoliert, keine Kern-Änderungen)
+├── app.py             # LoomiApp: API-Schicht, nutzt nur bestehende Loomi-Funktionen
+├── server.py          # HTTP-Server (nur Standardbibliothek) + statische Dateien
+└── static/            # index.html, style.css, app.js (kein Build-Schritt)
+tests/                 # pytest-Tests für alle Module inkl. webapp (test_webapp.py)
 ```

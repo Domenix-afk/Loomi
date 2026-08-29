@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loomi – dein Style-Assistent</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">L</span>
+      <span class="brand-name">loomi</span>
+    </div>
+    <nav class="nav" id="nav">
+      <button class="nav-btn active" data-view="recommend">Empfehlung</button>
+      <button class="nav-btn" data-view="wardrobe">Kleiderschrank</button>
+      <button class="nav-btn" data-view="profile">Profil</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ===== Empfehlung ===== -->
+    <section id="view-recommend" class="view active">
+      <div class="intro">
+        <h1>Dein Outfit, heute.</h1>
+        <p class="sub">
+          Loomi kennt deinen Kleiderschrank und bewertet jedes Outfit transparent –
+          nach Stil, Farbe, Anlass, Wetter und deinem Geschmack.
+        </p>
+      </div>
+      <div class="grid">
+        <div class="card form-card">
+          <h2>Wetter &amp; Anlass</h2>
+          <div class="field">
+            <label for="temperature">Temperatur (°C)</label>
+            <input type="number" id="temperature" value="20" min="-40" max="50" step="0.5">
+          </div>
+          <div class="field">
+            <label>Wetterlage</label>
+            <div class="chips" id="condition-chips"></div>
+          </div>
+          <div class="field">
+            <label for="occasion">Anlass</label>
+            <select id="occasion"></select>
+          </div>
+          <div class="field">
+            <label for="preferred-style">Wunsch-Style <span class="muted">(optional)</span></label>
+            <select id="preferred-style"></select>
+          </div>
+          <button id="btn-recommend" class="btn primary">Outfits finden</button>
+        </div>
+        <div id="results" class="results" aria-live="polite">
+          <div class="card placeholder">
+            <p>Wähle Wetter und Anlass – Loomi sucht dir dann die besten
+            Kombinationen aus deinem Kleiderschrank heraus.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Kleiderschrank ===== -->
+    <section id="view-wardrobe" class="view">
+      <div class="intro">
+        <h1>Dein Kleiderschrank</h1>
+        <p class="sub" id="wardrobe-count"></p>
+      </div>
+      <div class="card">
+        <h2>Neues Kleidungsstück</h2>
+        <form id="add-item-form" class="form-grid">
+          <div class="field">
+            <label for="item-name">Name</label>
+            <input type="text" id="item-name" placeholder="z. B. Weißes T-Shirt" required>
+          </div>
+          <div class="field">
+            <label for="item-category">Kategorie</label>
+            <select id="item-category"></select>
+          </div>
+          <div class="field">
+            <label for="item-color">Farbe</label>
+            <select id="item-color"></select>
+          </div>
+          <div class="field">
+            <label for="item-style">Stil</label>
+            <select id="item-style"></select>
+          </div>
+          <div class="field">
+            <label for="item-warmth">Wärme <span class="muted">1 = leicht, 5 = warm</span></label>
+            <input type="number" id="item-warmth" value="3" min="1" max="5">
+          </div>
+          <div class="field">
+            <label for="item-formality">Formalität <span class="muted">1 = leger, 5 = formell</span></label>
+            <input type="number" id="item-formality" value="2" min="1" max="5">
+          </div>
+          <button type="submit" class="btn primary">Hinzufügen</button>
+        </form>
+      </div>
+      <div class="actions">
+        <button id="btn-load-sample" class="btn secondary">Beispieldaten laden</button>
+        <button id="btn-remove-sample" class="btn ghost">Beispieldaten entfernen</button>
+      </div>
+      <div id="wardrobe-list" class="item-grid"></div>
+    </section>
+
+    <!-- ===== Profil ===== -->
+    <section id="view-profile" class="view">
+      <div class="intro">
+        <h1>Dein Präferenzprofil</h1>
+        <p class="sub">
+          Loomi lernt aus deinen Bewertungen (1–5) nach jeder Empfehlung.
+          Hier siehst du, was es bisher gelernt hat.
+        </p>
+      </div>
+      <div id="profile-card" class="card"></div>
+    </section>
+  </main>
+
+  <div id="toasts" aria-live="polite"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
