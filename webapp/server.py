@@ -150,6 +150,21 @@ def create_server(app: LoomiApp, host: str = "127.0.0.1", port: int = 8000) -> T
     return ThreadingHTTPServer((host, port), handler)
 
 
+def resolve_bind(args, environ: dict | None = None) -> tuple[str, int]:
+    """Bestimmt Host/Port: CLI-Argumente gewinnen, sonst PORT/HOST aus der Umgebung.
+
+    Render (und ähnliche Plattformen) setzen die Umgebungsvariable `PORT`
+    und erwarten, dass die App auf `0.0.0.0` lauscht. Lokal (ohne `PORT`)
+    bleibt es bei 127.0.0.1:8000.
+    """
+    environ = environ if environ is not None else os.environ
+    port = args.port if args.port is not None else int(environ.get("PORT", "8000"))
+    host = args.host
+    if host is None:
+        host = "0.0.0.0" if environ.get("PORT") else "127.0.0.1"
+    return host, port
+
+
 def main() -> None:
     try:
         sys.stdout.reconfigure(encoding="utf-8")
@@ -157,15 +172,16 @@ def main() -> None:
         pass
 
     parser = argparse.ArgumentParser(description="Loomi Web-App (bestehender Loomi-Kern)")
-    parser.add_argument("--host", default="127.0.0.1", help="Bind-Adresse (Standard: 127.0.0.1)")
-    parser.add_argument("--port", type=int, default=8000, help="Port (Standard: 8000)")
+    parser.add_argument("--host", default=None, help="Bind-Adresse (Standard: 127.0.0.1 bzw. 0.0.0.0 mit PORT)")
+    parser.add_argument("--port", type=int, default=None, help="Port (Standard: 8000 bzw. $PORT)")
     parser.add_argument("--db", default="loomi.db", help="Pfad zur SQLite-Datenbank")
     parser.add_argument("--open", action="store_true", help="Browser automatisch öffnen")
     args = parser.parse_args()
 
+    host, port = resolve_bind(args)
     app = LoomiApp(args.db)
-    server = create_server(app, args.host, args.port)
-    url = f"http://{args.host}:{server.server_address[1]}"
+    server = create_server(app, host, port)
+    url = f"http://{host}:{server.server_address[1]}"
     print(f"Loomi Web-App läuft unter {url}  (Datenbank: {args.db})")
     print("Beenden mit Strg+C")
     if args.open:

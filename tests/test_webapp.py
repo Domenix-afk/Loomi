@@ -8,7 +8,7 @@ import urllib.request
 import pytest
 
 from webapp.app import LoomiApp
-from webapp.server import create_server
+from webapp.server import create_server, resolve_bind
 
 
 # --- Helfer ---
@@ -231,6 +231,31 @@ def test_preferences_reset(tmp_path):
 
 
 # --- HTTP End-to-End: alle Endpunkte ---
+
+
+# --- Bind-Adresse für Plattformen (Render/Heroku) ---
+
+
+class _Args:
+    def __init__(self, host=None, port=None):
+        self.host = host
+        self.port = port
+
+
+def test_resolve_bind_local_defaults():
+    assert resolve_bind(_Args(), environ={}) == ("127.0.0.1", 8000)
+
+
+def test_resolve_bind_uses_port_env_for_platforms():
+    assert resolve_bind(_Args(), environ={"PORT": "10000"}) == ("0.0.0.0", 10000)
+
+
+def test_resolve_bind_cli_args_win_over_env():
+    args = _Args(host="127.0.0.1", port=9000)
+    assert resolve_bind(args, environ={"PORT": "10000"}) == ("127.0.0.1", 9000)
+
+
+# --- HTTP End-to-End ---
 
 
 def test_http_serves_frontend(server):
