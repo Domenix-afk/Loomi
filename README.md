@@ -1,4 +1,4 @@
-# Loomi
+# Loomi — Your Style. Perfected.
 
 Modularer Grundbaustein für Loomis **Personal-Style-Engine**: ein einfaches,
 erweiterbares Outfit-Recommendation-System. Der Nutzer pflegt seinen
