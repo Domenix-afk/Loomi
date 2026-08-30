@@ -1,43 +1,43 @@
-# Loomi — Your Style. Perfected. ✨
+# Loomi — Your Style. Perfected. 
 
-**Persönliche Outfit-Empfehlungen – transparent & regelbasiert.**
-Pflege deinen Kleiderschrank, gib Wetter & Anlass an, und Loomi stellt aus
-deinen Teilen die besten Outfits zusammen – mit nachvollziehbarem Score.
+**Personalized outfit recommendations—transparent and rule-based.**
+Organize your closet, specify the weather and occasion, and Loomi will put together
+the best outfits from your items—with a transparent score.
 
-> Kein komplexes AI-System, sondern ein sauberer, erweiterbarer
-> Grundbaustein: Feedback, Vorlieben und später ML setzen direkt darauf auf.
+> Not a complex AI system, but a clean, extensible
+> building block: feedback, preferences, and—later—machine learning build directly on top of it.
 
-## 🚀 Schnellstart
+##  Quick Start
 
 ```bash
 pip install -e .
-python -m loomi.demo        # Beispiel-Szenarien
-python -m loomi.main        # eigener Kleiderschrank (SQLite) + Empfehlung
-python -m webapp.server     # Web-App → http://127.0.0.1:8000
+python -m loomi.demo        # Example scenarios
+python -m loomi.main        # Your own wardrobe (SQLite) + recommendations
+python -m webapp.server     # Web app → http://127.0.0.1:8000
 python -m pytest            # Tests
 ```
 
-## 🧠 Wie es funktioniert
+##  How It Works
 
-Strikt getrennte Module, gekoppelt über `loomi/models.py`:
+Strictly separated modules, linked via `loomi/models.py`:
 
-`OutfitGenerator` (bildet alle Kombinationen) → **Scoring** (Stil, Farbe,
-Anlass, Wetter, Abwechslung + „Dein Geschmack“) → `Recommender`
-(gewichtete Summe, empfiehlt die Top-3).
+`OutfitGenerator` (generates all combinations) → **Scoring** (style, color,
+occasion, weather, variety + “your taste”) → `Recommender`
+(weighted sum, recommends the top 3) .
 
-## ❤️ Personalisierung
+##  Personalization
 
-Bewerte Outfits mit 1–5 Sternen – Loomi lernt daraus deine Vorlieben
-(Kategorie, Farbe, Stil, Wärme, Formalität). Das `PreferenceProfile` ist
-deterministisch, wird in SQLite persistiert und verbessert ab der nächsten
-Empfehlung das Ranking.
+Rate outfits with 1–5 stars—Loomi learns your preferences from this
+(category, color, style, warmth, formality). The `PreferenceProfile` is
+deterministic, is persisted in SQLite, and improves the ranking starting with the next
+recommendation.
 
-## 🌐 Deployment (Vercel)
+##  Deployment (Vercel)
 
-```bash
-npm i -g vercel && vercel login && vercel --prod
-```
+Website: https://loomi-virid.vercel.app/
 
-Ein dünner WSGI-Adapter (`wsgi.py`) leitet alle Requests an `LoomiApp` weiter –
-Kern und Web-App bleiben unverändert. Hinweis: Vercels Dateisystem ist
-ephemer; für dauerhafte Daten `LOOMI_DB_PATH` auf eine externe DB umstellen.
+A lightweight WSGI adapter (`wsgi.py`) forwards all requests to `LoomiApp`—
+the core and web app remain unchanged. Note: Vercel’s file system is
+ephemeral; for persistent data, set `LOOMI_DB_PATH` to an external database.
+
+Translated with DeepL.com (free version)
