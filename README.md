@@ -45,6 +45,49 @@ python -m webapp.server --db pfad.db  # andere Datenbank
 python -m webapp.server --open        # Browser automatisch öffnen
 ```
 
+### Deployment auf Vercel
+
+Vercel kann die **unveränderte** Web-App als Python-Funktion ausliefern.
+Der einzige Zusatz ist ein dünner WSGI-Adapter (`wsgi.py`) plus zwei kleine
+Deploy-Konfigurationen – der Loomi-Kern und `webapp/` bleiben unangetastet:
+
+```
+Vercel  ->  wsgi.app  ->  webapp.server.route_api / LoomiApp  ->  Loomi-Kern
+```
+
+- **`wsgi.py`** – Standardbibliothek-WSGI-App (keine neuen Abhängigkeiten):
+  leitet alle `/api/*`-Requests über denselben `route_api`-Dispatcher wie der
+  lokale Server an `LoomiApp` weiter und bedient `/` + `/static/*` aus
+  `webapp/static/`. Es gibt **keine** neue Funktionalität und keine
+  Reimplementierung.
+- **`pyproject.toml`** – `[tool.vercel] entrypoint = "wsgi:app"` verweist
+  Vercel auf den Einstiegspunkt.
+- **`vercel.json`** – hält den Funktions-Bundle schlank (Tests usw. bleiben
+  außen vor), ohne die zur Laufzeit benötigten `webapp/`/`loomi/`-Dateien
+  auszuschließen.
+
+Ausliefern per CLI aus dem Projekt-Root:
+
+```bash
+npm i -g vercel
+vercel login
+vercel --prod
+```
+
+oder das Repository im Vercel-Dashboard importieren. Lokal testen (Vercel ruft
+intern dasselbe `app`-Objekt auf):
+
+```bash
+python -c "from wsgiref.simple_server import make_server; from wsgi import app; make_server('127.0.0.1', 8000, app).serve_forever()"
+```
+
+**Wichtig (Persistenz):** Vercel-Funktionen haben ein ephemeres Dateisystem.
+Die SQLite-Datenbank liegt standardmäßig unter `/tmp/loomi.db` und überlebt
+**Kaltstarts nicht** – Kleiderschrank/Vorlieben wären nach jedem Kaltstart leer
+(der „Beispieldaten laden“-Button füllt den Schrank dann wieder). Für
+dauerhafte Daten den Pfad über die Umgebungsvariable `LOOMI_DB_PATH` auf eine
+verwaltete Datenquelle umstellen.
+
 ### Hauptprogramm (`loomi.main`)
 
 `python -m loomi.main` startet mit einem Menü und fragt, was du tun möchtest:
@@ -222,7 +265,9 @@ loomi/                 # bestehender Python-Kern (unverändert)
 └── main.py            # Hauptprogramm (eigener Kleiderschrank, Feedback, Löschen)
 webapp/                # Web-App über dem Kern (isoliert, keine Kern-Änderungen)
 ├── app.py             # LoomiApp: API-Schicht, nutzt nur bestehende Loomi-Funktionen
-├── server.py          # HTTP-Server (nur Standardbibliothek) + statische Dateien
+├── server.py          # HTTP-Server (stdlib) + statische Dateien; enthält route_api()
 └── static/            # index.html, style.css, app.js (kein Build-Schritt)
-tests/                 # pytest-Tests für alle Module inkl. webapp (test_webapp.py)
+wsgi.py                # dünner Vercel-WSGI-Adapter (nutzt route_api/LoomiApp, keine Abhängigkeiten)
+vercel.json            # Vercel-Konfiguration (hälts den Funktions-Bundle schlank)
+tests/                 # pytest-Tests inkl. webapp (test_webapp.py) und Vercel-Adapter (test_vercel.py)
 ```

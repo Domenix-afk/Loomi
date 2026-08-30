@@ -13,5 +13,11 @@ license = { text = "MIT" }
 [tool.setuptools.packages.find]
 include = ["loomi*"]
 
+# Vercel: Einstiegspunkt für die bestehende Web-App über die dünne
+# WSGI-Schicht (siehe wsgi.py). Keine zusätzlichen Abhängigkeiten nötig –
+# `app` ist eine reine Standardbibliothek-WSGI-Anwendung.
+[tool.vercel]
+entrypoint = "wsgi:app"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

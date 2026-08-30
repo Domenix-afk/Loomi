@@ -39,6 +39,43 @@ def _read_static(rel_path: str) -> bytes | None:
     return data
 
 
+def route_api(app, method: str, path: str, read_body) -> tuple[int, object]:
+    """HTTP-freies API-Routing über die bestehende LoomiApp.
+
+    Liefert (Status, JSON-serialisierbarer Payload) – die einzige Stelle,
+    an der URLs auf API-Operationen gemappt werden. `read_body` ist eine
+    Callable, die den bereits eingelesenen Request-Body als dict liefert und
+    nur für POST-Endpunkte aufgerufen wird. Wird sowohl vom lokalen
+    `LoomiHandler` als auch vom Vercel-WSGI-Adapter wiederverwendet, damit
+    die API an beiden Stellen identisch bleibt.
+
+    Validierungs- bzw. Fachfehler werden als ValueError/KeyError weitergereicht
+    und von den Aufrufern in 400/404 übersetzt.
+    """
+    if method == "GET" and path == "/api/wardrobe":
+        return 200, app.list_items()
+    elif method == "POST" and path == "/api/wardrobe/items":
+        return 201, app.add_item(read_body())
+    elif method == "DELETE" and path.startswith("/api/wardrobe/items/"):
+        # Browser senden IDs percent-encodiert (z. B. bei Umlauten).
+        item_id = unquote(path[len("/api/wardrobe/items/"):])
+        return 200, app.delete_item(item_id)
+    elif method == "POST" and path == "/api/wardrobe/sample":
+        return 200, app.load_sample()
+    elif method == "DELETE" and path == "/api/wardrobe/sample":
+        return 200, app.remove_sample()
+    elif method == "POST" and path == "/api/recommend":
+        return 200, app.recommend(read_body())
+    elif method == "POST" and path == "/api/feedback":
+        return 201, app.add_feedback(read_body())
+    elif method == "GET" and path == "/api/preferences":
+        return 200, app.preferences()
+    elif method == "DELETE" and path == "/api/preferences":
+        return 200, app.reset_preferences()
+    else:
+        return 404, {"error": f"Unbekannter Endpunkt: {method} {path}"}
+
+
 class LoomiHandler(BaseHTTPRequestHandler):
     """Bedient API-Routen und statische Dateien."""
 
@@ -72,29 +109,8 @@ class LoomiHandler(BaseHTTPRequestHandler):
         return data if isinstance(data, dict) else {}
 
     def _route_api(self, method: str, path: str) -> None:
-        app = self.app
-        if method == "GET" and path == "/api/wardrobe":
-            self._json(200, app.list_items())
-        elif method == "POST" and path == "/api/wardrobe/items":
-            self._json(201, app.add_item(self._read_body()))
-        elif method == "DELETE" and path.startswith("/api/wardrobe/items/"):
-            # Browser senden IDs percent-encodiert (z. B. bei Umlauten).
-            item_id = unquote(path[len("/api/wardrobe/items/"):])
-            self._json(200, app.delete_item(item_id))
-        elif method == "POST" and path == "/api/wardrobe/sample":
-            self._json(200, app.load_sample())
-        elif method == "DELETE" and path == "/api/wardrobe/sample":
-            self._json(200, app.remove_sample())
-        elif method == "POST" and path == "/api/recommend":
-            self._json(200, app.recommend(self._read_body()))
-        elif method == "POST" and path == "/api/feedback":
-            self._json(201, app.add_feedback(self._read_body()))
-        elif method == "GET" and path == "/api/preferences":
-            self._json(200, app.preferences())
-        elif method == "DELETE" and path == "/api/preferences":
-            self._json(200, app.reset_preferences())
-        else:
-            self._error(404, f"Unbekannter Endpunkt: {method} {path}")
+        status, payload = route_api(self.app, method, path, read_body=self._read_body)
+        self._json(status, payload)
 
     # --- Standard-Methoden ---
 
